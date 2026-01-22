@@ -1,11 +1,27 @@
-import { Card, CardContent, CardMedia, Typography, Button, Grid, Box } from "@mui/material";
+import {
+  Card,
+  CardContent,
+  CardMedia,
+  Typography,
+  Button,
+  Grid,
+  Box,
+  TextField,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from "@mui/material";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
 const Home = () => {
   const [blogs, setBlogs] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [currentBlog, setCurrentBlog] = useState(null); // blog being edited
+  const [updatedData, setUpdatedData] = useState({ title: "", content: "", img_url: "" });
 
-  // Fetch all blogs from backend
+  // Fetch all blogs
   useEffect(() => {
     axios
       .get("http://localhost:3002/get")
@@ -13,24 +29,39 @@ const Home = () => {
       .catch((err) => console.log(err));
   }, []);
 
-  // DELETE blog
+  // Delete blog
   const deleteBlog = (id) => {
     axios
       .delete(`http://localhost:3002/delete/${id}`)
-      .then(() => {
-        setBlogs(blogs.filter((b) => b._id !== id)); // remove from state
-      })
+      .then(() => setBlogs(blogs.filter((b) => b._id !== id)))
       .catch((err) => console.log(err));
   };
 
-  // UPDATE blog (demo: update title to "Updated!")
-  const updateBlog = (id) => {
+  // Open update dialog
+  const handleUpdateOpen = (blog) => {
+    setCurrentBlog(blog);
+    setUpdatedData({
+      title: blog.title,
+      content: blog.content,
+      img_url: blog.img_url,
+    });
+    setOpen(true);
+  };
+
+  // Handle form change
+  const handleChange = (e) => {
+    setUpdatedData({ ...updatedData, [e.target.name]: e.target.value });
+  };
+
+  // Submit update
+  const handleUpdateSubmit = () => {
     axios
-      .put(`http://localhost:3002/update/${id}`, { title: "Updated!" })
+      .put(`http://localhost:3002/update/${currentBlog._id}`, updatedData)
       .then((res) => {
         setBlogs(
-          blogs.map((b) => (b._id === id ? { ...b, title: res.data.blog.title } : b))
+          blogs.map((b) => (b._id === currentBlog._id ? { ...b, ...res.data.blog } : b))
         );
+        setOpen(false);
       })
       .catch((err) => console.log(err));
   };
@@ -57,7 +88,7 @@ const Home = () => {
                     {blog.category || "General"}
                   </Typography>
                   <Typography variant="h6">{blog.title}</Typography>
-                
+                  
                   <Box sx={{ mt: 2 }}>
                     <Button
                       variant="contained"
@@ -72,7 +103,7 @@ const Home = () => {
                       variant="contained"
                       color="secondary"
                       size="small"
-                      onClick={() => updateBlog(blog._id)}
+                      onClick={() => handleUpdateOpen(blog)}
                     >
                       UPDATE
                     </Button>
@@ -83,6 +114,42 @@ const Home = () => {
           ))}
         </Grid>
       )}
+
+      {/* Update Dialog */}
+      <Dialog open={open} onClose={() => setOpen(false)}>
+        <DialogTitle>Update Blog</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+          <TextField
+            label="Title"
+            name="title"
+            value={updatedData.title}
+            onChange={handleChange}
+            fullWidth
+          />
+          <TextField
+            label="Content"
+            name="content"
+            value={updatedData.content}
+            onChange={handleChange}
+            multiline
+            rows={4}
+            fullWidth
+          />
+          <TextField
+            label="Image URL"
+            name="img_url"
+            value={updatedData.img_url}
+            onChange={handleChange}
+            fullWidth
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="contained" color="secondary" onClick={handleUpdateSubmit}>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
