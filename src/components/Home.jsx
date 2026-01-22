@@ -57,9 +57,7 @@ const Home = () => {
                     {blog.category || "General"}
                   </Typography>
                   <Typography variant="h6">{blog.title}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Author: {blog.author || "Anonymous"}
-                  </Typography>
+                
                   <Box sx={{ mt: 2 }}>
                     <Button
                       variant="contained"
